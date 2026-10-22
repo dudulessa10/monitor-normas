@@ -1,0 +1,3 @@
+# Scripts e arquivos do servidor Linux precisam de LF, mesmo vindos do Windows.
+*.sh text eol=lf
+deploy/** text eol=lf

@@ -1,0 +1,13 @@
+# Equivale a "frequencia: diaria" e "horario: 06:00" do alvos.yaml. No servidor quem manda é
+# este arquivo: ao mudar o horário, edite aqui e rode "systemctl daemon-reload".
+# Semanal (segundas): OnCalendar=Mon *-*-* 06:00:00
+[Unit]
+Description=Monitor de Normas - agenda diária
+
+[Timer]
+OnCalendar=*-*-* 06:00:00
+# Se a VM estava desligada no horário, roda assim que ligar.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitor de Normas</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f5fa8'/%3E%3Ctext x='16' y='23' font-size='20' font-family='Georgia,serif' font-weight='700' text-anchor='middle' fill='white'%3E§%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">
+      <span class="marca-icone" aria-hidden="true">§</span>
+      <span>Monitor de Normas</span>
+    </div>
+    <nav class="menu" aria-label="Telas">
+      <a href="#painel" data-tela="painel">Painel</a>
+      <a href="#alvos" data-tela="alvos">Alvos</a>
+      <a href="#mudancas" data-tela="mudancas">Mudanças</a>
+      <a href="#execucoes" data-tela="execucoes">Execuções</a>
+    </nav>
+    <a class="link-docs" href="/docs" target="_blank" rel="noopener">API</a>
+  </header>
+
+  <main id="tela" class="conteudo" tabindex="-1"></main>
+
+  <div id="avisos" class="avisos" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

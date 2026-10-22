@@ -1,0 +1,12 @@
+# Copie para /etc/logrotate.d/monitor-normas. O servidor e a CLI reabrem o arquivo sozinhos
+# depois da rotação (WatchedFileHandler), então não é preciso reiniciar nada.
+/var/lib/monitor-normas/logs/*.log {
+    weekly
+    rotate 12
+    compress
+    delaycompress
+    missingok
+    notifempty
+    su monitor-normas monitor-normas
+    create 0640 monitor-normas monitor-normas
+}

@@ -1,0 +1,13 @@
+# Copie para /etc/caddy/Caddyfile. Com um domínio apontando para a VM e as portas 80 e 443
+# abertas, o Caddy obtém e renova o certificado HTTPS sozinho.
+monitor.exemplo.com.br {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000
+}
+
+# Sem domínio (VM só na rede interna): troque o bloco acima por este, que usa um
+# certificado próprio do Caddy (o navegador vai pedir para confiar nele).
+# :443 {
+# 	tls internal
+# 	reverse_proxy 127.0.0.1:8000
+# }

@@ -1,0 +1,28 @@
+# Aplicativo web (telas + API). Escuta só em 127.0.0.1; o Caddy publica com HTTPS.
+[Unit]
+Description=Monitor de Normas - aplicativo web
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=monitor-normas
+Group=monitor-normas
+WorkingDirectory=/opt/monitor-normas
+EnvironmentFile=/etc/monitor-normas/monitor-normas.env
+# Um worker só: as execuções disparadas pela web rodam numa thread deste processo.
+ExecStart=/opt/monitor-normas/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --no-server-header
+Restart=on-failure
+RestartSec=5
+
+StateDirectory=monitor-normas
+StateDirectoryMode=0750
+UMask=0027
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/monitor-normas
+
+[Install]
+WantedBy=multi-user.target

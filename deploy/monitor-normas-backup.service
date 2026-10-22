@@ -1,0 +1,17 @@
+[Unit]
+Description=Monitor de Normas - cópia de dados/
+
+[Service]
+Type=oneshot
+User=monitor-normas
+Group=monitor-normas
+EnvironmentFile=/etc/monitor-normas/monitor-normas.env
+ExecStart=/opt/monitor-normas/deploy/backup.sh
+
+StateDirectory=monitor-normas monitor-normas-backups
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/monitor-normas /var/lib/monitor-normas-backups

@@ -1,0 +1,271 @@
+# =====================================================================
+#  Carga inicial dos alvos (usada só por "python monitor.py importar-yaml")
+# =====================================================================
+#  Os alvos ficam no banco (dados/estado.db) e são editados pela tela
+#  Alvos (http://localhost:8000) ou pela API (/api/v1/alvos). Editar
+#  este arquivo depois da carga NÃO muda nada; para reimportar por cima
+#  do banco, use "python monitor.py importar-yaml --substituir".
+#
+#  Formato de cada alvo: veja os comentários no alvos.yaml e o README.
+alvos:
+
+  # ---------------------------------------------------------------
+  - id: anac-resolucoes
+    ativo: true
+    site: ANAC
+    categoria: Resoluções
+    prioridade: alta
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/resolucoes/{ano}"
+    anos: [atual]                 # em janeiro, mude para [atual, anterior]
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma           # campo que identifica cada linha
+    extracao:
+      tabela: primeira            # a página tem uma tabela única
+      colunas:                    # cabeçalho da tabela -> nome do campo
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+      regex_numero: resolucao
+    observacoes: >
+      Tabela com Norma, Publicação (data + DOU), Ementa e Arquivo.
+      Em 15/10/2026 a página de 2026 tinha 28 itens (nº 789 a 816).
+
+  # ---------------------------------------------------------------
+  - id: anac-rbac
+    ativo: true
+    site: ANAC
+    categoria: RBAC
+    prioridade: alta
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/rbha-e-rbac/rbac"
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+      detectar_mudanca_em: [norma, publicacao, ementa]   # pega nova emenda e revogação
+    extracao:
+      tabela: primeira
+      colunas:
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+      regex_numero: rbac
+      marcar_status:              # aplica regex na ementa
+        revogada: revogada
+        alterada: alterada
+    observacoes: >
+      Lista única (sem divisão por ano). Uma nova emenda troca o texto
+      "RBAC XX EMD NN" na mesma linha, por isso a comparação inclui o
+      campo norma, além da data.
+
+  # ---------------------------------------------------------------
+  - id: anac-portarias
+    ativo: true
+    site: ANAC
+    categoria: Portarias
+    prioridade: media
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/portarias/{ano}"
+    anos: [atual]
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+    extracao:
+      tabela: primeira
+      colunas:                    # conferido em 15/10/2026
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+      regex_numero: portaria
+    observacoes: >
+      Índice por ano de 1974 a 2026. Em 15/10/2026 a página de 2026 tinha
+      1260 itens (inclui portarias de pessoal, publicadas no BPS).
+
+  # ---------------------------------------------------------------
+  - id: anac-portarias-regulatorias
+    ativo: true
+    site: ANAC
+    categoria: Portarias Regulatórias
+    prioridade: media
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/portaria-regulatoria/{ano}"
+    anos: [atual]
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+    extracao:
+      tabela: primeira
+      colunas:                    # conferido em 15/10/2026
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+      regex_numero: portaria
+    observacoes: >
+      A página-índice só tem links por ano (sem tabela); a tabela fica em
+      /portaria-regulatoria/ANO. Em 15/10/2026, 2026 tinha 44 itens.
+
+  # ---------------------------------------------------------------
+  - id: anac-is
+    ativo: true
+    site: ANAC
+    categoria: Instruções Suplementares (IS)
+    prioridade: alta
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/iac-e-is/is"
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+      detectar_mudanca_em: [norma, publicacao, ementa]
+    extracao:
+      tabela: primeira
+      colunas:                    # conferido em 15/10/2026
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+      regex_numero: is
+      marcar_status:
+        revogada: revogada
+    observacoes: >
+      IS detalham como cumprir os RBAC. Lista única com 237 itens em
+      15/10/2026; a coluna Norma não tem "nº" (ex.: IS 00-001B).
+
+  # ---------------------------------------------------------------
+  - id: anac-decisoes
+    ativo: true
+    site: ANAC
+    categoria: Decisões
+    prioridade: media
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/decisoes/{ano}"
+    anos: [atual]
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+    extracao:
+      tabela: primeira
+      colunas:                    # conferido em 15/10/2026
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+      regex_numero: decisao
+    observacoes: >
+      De 2018 em diante a URL é /decisoes/ANO. De 2006 a 2016 era
+      /decisoes/decisoes-ANO (só importa se for preciso carga histórica).
+
+  # ---------------------------------------------------------------
+  - id: anac-instrucoes-normativas
+    ativo: true
+    site: ANAC
+    categoria: Instruções Normativas
+    prioridade: baixa
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/instrucoes-normativas/{ano}"
+    anos: [atual]
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+    extracao:
+      tabela: primeira
+      colunas:                    # conferido em 15/10/2026
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+    observacoes: >
+      A página-índice só tem links por ano (2006 a 2026, sem tabela); a
+      tabela fica em /instrucoes-normativas/ANO. Em 15/10/2026, 2026 tinha 1 item.
+
+  # ---------------------------------------------------------------
+  - id: anac-condicoes-especiais
+    ativo: true
+    site: ANAC
+    categoria: Condições Especiais (CE/SC)
+    prioridade: baixa
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/cesc-condicao-especial"
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+    extracao:
+      tabela: primeira
+      colunas:                    # conferido em 15/10/2026
+        Norma: norma
+        Publicação: publicacao
+        Ementa: ementa
+        Arquivo: link_arquivo
+    observacoes: >
+      Condições especiais de certificação de aeronaves específicas
+      (ex.: ERJ 190-400). Também saem como Resolução.
+
+  # ---------------------------------------------------------------
+  - id: anac-sumulas
+    ativo: false
+    site: ANAC
+    categoria: Súmulas Administrativas
+    prioridade: baixa
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/sumulas-administrativas"
+    deteccao:
+      metodo: hash_conteudo
+    observacoes: Mudam raramente. Ativar se for relevante.
+
+  # ---------------------------------------------------------------
+  - id: anac-planos-programas
+    ativo: false
+    site: ANAC
+    categoria: Programas, Planos e Diretrizes
+    prioridade: baixa
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-1/planos-e-programas"
+    deteccao:
+      metodo: hash_conteudo
+    observacoes: Inclui a agenda regulatória. Ativar se for relevante.
+
+  # ---------------------------------------------------------------
+  - id: anac-legislacao-federal
+    ativo: false
+    site: ANAC
+    categoria: Legislação Federal (leis e decretos do setor)
+    prioridade: baixa
+    url: "https://www.anac.gov.br/assuntos/legislacao/legislacao-federal"
+    deteccao:
+      metodo: lista_itens
+      chave_item: norma
+    extracao:
+      tabela: todas               # várias tabelas: Leis, Decretos, Portarias...
+      colunas:
+        Norma: norma
+        Ementa: ementa
+        Data: data
+        Arquivo: link_arquivo
+    observacoes: >
+      Várias tabelas, uma por tipo (Leis, Decretos...). Alguns links
+      apontam para planalto.gov.br.
+
+  # ---------------------------------------------------------------
+  - id: anac-rss
+    ativo: false
+    site: ANAC
+    categoria: Feed RSS
+    prioridade: baixa
+    url: "https://www.anac.gov.br/rss"
+    deteccao:
+      metodo: lista_itens
+      chave_item: link
+    extracao:
+      tipo: rss                   # usar feedparser
+    observacoes: >
+      O site lista esse feed, mas o robots.txt bloqueia o acesso
+      automatizado a ele. Só ativar se a ANAC liberar ou autorizar.
+
+  # ---------------------------------------------------------------
+  - id: anac-consultas-publicas
+    ativo: false
+    site: ANAC (gov.br)
+    categoria: Consultas Públicas
+    prioridade: media
+    url: "https://www.gov.br/anac/pt-br/acesso-a-informacao/participacao-social/consultas-publicas/consultas/{ano}"
+    anos: [atual]
+    deteccao:
+      metodo: hash_conteudo
+    observacoes: >
+      Mostra normas ANTES de serem aprovadas (minutas). O portal gov.br
+      exibiu um desafio anti-robô (captcha) no teste de 15/10/2026, então
+      o requests simples deve falhar aqui. Avaliar outra forma de coleta.

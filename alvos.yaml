@@ -1,0 +1,80 @@
+# =====================================================================
+#  Lista de alvos do robô de monitoramento (protótipo)
+# =====================================================================
+#  Configurações GLOBAIS do robô: padrões, regex e palavras-chave.
+#  Os ALVOS (quais páginas vigiar) ficam no banco de dados e são
+#  editados pela tela Alvos (http://localhost:8000) ou pela API.
+#  A carga inicial deles está em alvos_iniciais.yaml.
+#
+#  Os campos abaixo descrevem o formato de cada alvo (usado na
+#  tela, na API e no alvos_iniciais.yaml).
+#
+#  Placeholders aceitos na URL:
+#    {ano}  -> ano corrente (ex.: 2026). Evita ter de editar o arquivo
+#              todo mês de janeiro. Use "anos: [atual, anterior]" para
+#              vigiar também o ano anterior durante a virada.
+#
+#  Métodos de detecção ("deteccao.metodo"):
+#    lista_itens       -> extrai cada linha da tabela (norma, data, link)
+#                         e compara com a lista salva. Diz O QUE entrou,
+#                         saiu ou mudou. Recomendado.
+#    data_modificacao  -> só compara a "última modificação" da página.
+#                         Barato, mas diz apenas QUE algo mudou.
+#    hash_conteudo     -> compara o hash do conteúdo principal da página.
+#                         Útil para páginas sem tabela.
+#
+#  ATENÇÃO (verificado em 15/10/2026): nas páginas-índice da ANAC
+#  (ex.: /resolucoes, /portarias) a "última modificação" NÃO muda quando
+#  sai uma norma nova - ela muda só nas páginas de cada ano. Por isso
+#  os alvos abaixo apontam para as páginas por ano.
+# =====================================================================
+
+versao: 1
+atualizado_em: "2026-10-15"
+
+# ---------------------------------------------------------------------
+# Configurações gerais (valem para todos os alvos, salvo se o alvo
+# sobrescrever)
+# ---------------------------------------------------------------------
+padroes:
+  frequencia: diaria              # diaria | semanal (segunda) | manual - usado por "monitor.py agendar"
+  horario: "06:00"                # HH:MM, hora local do computador. Depois de mudar, rode "monitor.py agendar" de novo
+  timeout_segundos: 30
+  pausa_entre_requisicoes_segundos: 5   # gentileza com o servidor
+  tentativas: 3
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MonitorNormas/0.1"
+  baixar_arquivos: false          # true = baixa o PDF para calcular hash
+  registrar_no_ledger: true       # grava referência + datas + palavras-chave
+
+# ---------------------------------------------------------------------
+# Expressões regulares reutilizáveis (referenciadas por nome nos alvos)
+# ---------------------------------------------------------------------
+regex:
+  data_modificacao: 'última modificação\s+(\d{2}/\d{2}/\d{4})\s+(\d{2}h\d{2})'
+  data_br: '(\d{2})/(\d{2})/(\d{4})'
+  resolucao: 'Resolução\s+n[º°o]\.?\s*(\d+)'
+  portaria: 'Portaria(?:\s+(?:Regulatória|Conjunta|de\s+Pessoal))?\s+(?:n[º°o]\.?\s*)?([\d\.]+)'
+  decisao: 'Decisão\s+n[º°o]\.?\s*(\d+)'
+  rbac: '(RBAC(?:-E)?)\s*(\d+)(?:\s*EMD\s*(\d+))?'
+  is: 'IS\s+(?:n[º°o]\.?\s*)?(E?[\d\.\-]+[A-Z]?)'   # E94-001B = IS do RBAC-E
+  dou: 'DOU\s+(?:de\s+)?(\d{2}/\d{2}/\d{4})'
+  revogada: '\bRevogad[ao]\b'
+  alterada: '\bAlterad[ao]\b'
+
+# ---------------------------------------------------------------------
+# Palavras-chave de interesse. Itens que contenham alguma delas
+# na ementa recebem destaque no relatório e entram no índice de busca.
+# ---------------------------------------------------------------------
+palavras_chave_globais:
+  - RBAC
+  - aeronavegabilidade
+  - certificação
+  - aeródromo
+  - operador aéreo
+  - segurança operacional
+  - aeronaves não tripuladas
+  - drone
+  - manutenção
+  - licença
+  - tarifa
+  - passageiro

@@ -1,0 +1,10 @@
+# Depois da execução diária das 06:00 (o backup espera a trava se ela ainda estiver rodando).
+[Unit]
+Description=Monitor de Normas - backup diário
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
