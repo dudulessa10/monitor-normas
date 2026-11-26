@@ -1,3 +1,13 @@
-# Scripts e arquivos do servidor Linux precisam de LF, mesmo vindos do Windows.
+# Normaliza o fim de linha no repositório (LF), venha o arquivo do Windows ou do Linux.
+* text=auto
+
+# Scripts e arquivos do servidor Linux precisam de LF também na cópia de trabalho.
 *.sh text eol=lf
 deploy/** text eol=lf
+.nvmrc text eol=lf
+.env.example text eol=lf
+
+# Binários
+*.png binary
+*.ico binary
+*.xlsx binary

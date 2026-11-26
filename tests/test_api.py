@@ -48,16 +48,39 @@ def rodar_e_esperar(cliente, ctx, corpo=None):
 
 # ---------------------------------------------------------------- servidor
 
-def test_frontend_e_documentacao(ambiente):
-    cliente, _, _ = ambiente
-    pagina = cliente.get("/")
-    assert pagina.status_code == 200 and "Monitor de Normas" in pagina.text
-    assert cliente.get("/js/app.js").status_code == 200
-    assert cliente.get("/docs").status_code == 200
-    caminhos = cliente.get("/openapi.json").json()["paths"]
+def test_frontend_react_e_documentacao(tmp_path):
+    (tmp_path / "alvos.yaml").write_text(GLOBAIS, encoding="utf-8")
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text("<title>Monitor de Normas</title>", encoding="utf-8")
+    (dist / "assets" / "app.js").write_text("console.log(1)", encoding="utf-8")
+    with TestClient(criar_app(tmp_path, registrar_log=False, frontend=dist)) as cliente:
+        pagina = cliente.get("/")
+        assert pagina.status_code == 200 and "Monitor de Normas" in pagina.text
+        assert cliente.get("/assets/app.js").status_code == 200
+        # rotas do React recebem o index.html (recarregar a página ou abrir link direto)
+        for rota in ("/alvos", "/mudancas?alvo=x", "/execucoes"):
+            resposta = cliente.get(rota)
+            assert resposta.status_code == 200 and "Monitor de Normas" in resposta.text, rota
+        assert cliente.get("/assets/nao-existe.js").status_code == 404
+        erro_api = cliente.get("/api/v1/nao-existe")
+        assert erro_api.status_code == 404 and erro_api.headers["content-type"].startswith("application/json")
+        assert cliente.get("/docs").status_code == 200
+        caminhos = cliente.get("/openapi.json").json()["paths"]
     for caminho in ("/api/v1/alvos", "/api/v1/alvos/{alvo_id}/ativar", "/api/v1/execucoes", "/api/v1/mudancas",
                     "/api/v1/normas", "/api/v1/ledger", "/api/v1/ledger/verificar", "/api/v1/exportar/excel"):
         assert caminho in caminhos
+
+
+def test_sem_build_do_frontend_explica_o_que_fazer(tmp_path):
+    (tmp_path / "alvos.yaml").write_text(GLOBAIS, encoding="utf-8")
+    with TestClient(criar_app(tmp_path, registrar_log=False, frontend=tmp_path / "sem-build")) as cliente:
+        for rota in ("/", "/alvos"):
+            resposta = cliente.get(rota)
+            assert resposta.status_code == 503 and "setup.sh" in resposta.text
+        assert cliente.get("/api/v1/alvos").status_code == 200
+        assert cliente.get("/api/v1/nao-existe").status_code == 404
+        assert cliente.get("/docs").status_code == 200
 
 
 # ---------------------------------------------------------------- alvos
