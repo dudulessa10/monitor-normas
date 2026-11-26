@@ -6,13 +6,27 @@ Robô que vigia páginas de legislação da ANAC (que não tem API) e detecta no
 
 Há três formas de usar, todas sobre os mesmos dados:
 
-- **Aplicativo web** (`uvicorn app:app`): telas de gestão e API REST em `/api/v1`.
+- **Aplicativo web** (`uvicorn app:app`): telas em **React** e API REST em `/api/v1`.
 - **Linha de comando** (`python monitor.py ...`).
 - **Execução diária automática**, que chama a linha de comando (não o servidor).
 
-## Instalação
+> **Documentação completa:** [docs/PROJETO.md](docs/PROJETO.md): stack, arquitetura do React,
+> componentes, variáveis, instalação na VM Linux passo a passo, problemas comuns e o que mudou em
+> relação à versão original (que fica na tag `v1-js-puro`).
 
-Requer Python 3.11 ou mais novo.
+**Na VM Linux, em resumo:**
+
+```bash
+git clone https://github.com/dudulessa10/monitor-normas.git ~/monitor-legislacao-anac
+cd ~/monitor-legislacao-anac
+cp .env.example .env && chmod 600 .env && nano .env   # senha e pastas
+./setup.sh                                            # Python, Node do projeto, npm ci e build
+sudo deploy/instalar-servicos.sh                      # serviços web, execução diária e backup
+```
+
+## Instalação (desenvolvimento)
+
+Requer Python 3.11 ou mais novo e Node 26 (versão no `.nvmrc`).
 
 ```bash
 # Windows (PowerShell)
@@ -25,20 +39,27 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
+# telas (React): instala as dependências e gera frontend/dist
+cd frontend && npm ci && npm run build && cd ..
+
 # só na primeira vez: carrega no banco os alvos do alvos_iniciais.yaml
 python monitor.py importar-yaml
 ```
+
+No Linux/macOS, `./setup.sh` faz tudo isso de uma vez.
 
 ## Aplicativo web
 
 ```bash
 uvicorn app:app --reload        # http://localhost:8000  (documentação da API em /docs)
+cd frontend && npm run dev      # opcional: telas em http://localhost:5173 com atualização instantânea
 ```
 
 `--reload` reinicia o servidor quando o código muda (use durante o
 desenvolvimento). O servidor escuta só em `127.0.0.1` e, localmente, não pede
 senha. Para rodar numa VM Linux, com senha, HTTPS e execução diária pelo
-systemd, siga o [deploy/README.md](deploy/README.md).
+systemd, siga o [docs/PROJETO.md](docs/PROJETO.md#8-instalação-na-vm-linux-passo-a-passo)
+e o [deploy/README.md](deploy/README.md).
 
 | Tela | O que faz |
 |---|---|
@@ -128,12 +149,16 @@ Fora do Windows, `agendar` imprime a linha para colocar no `crontab -e`.
 ## Variáveis de ambiente
 
 Todas são opcionais; sem elas, tudo fica na pasta do projeto, como no uso local.
+Na VM, ficam no arquivo `.env` do projeto (modelo: [.env.example](.env.example)), lido só pelos
+serviços deste projeto.
 
 | Variável | Para quê |
 |---|---|
 | `MONITOR_NORMAS_BASE` | pasta de `dados/`, `relatorios/` e `logs/` (o `alvos.yaml` continua na pasta do código) |
 | `MONITOR_NORMAS_PASTA_SEGURA` | pasta da chave e da cópia da última âncora (padrão: `%LOCALAPPDATA%\MonitorNormas` ou `~/.config/monitor_normas`) |
 | `MONITOR_NORMAS_SENHA`, `MONITOR_NORMAS_USUARIO` | ligam a senha (HTTP Basic) nas telas e na API; usuário padrão `admin` |
+| `MONITOR_NORMAS_BACKUP`, `MONITOR_NORMAS_BACKUP_DIAS` | pasta e retenção das cópias diárias de `dados/` (VM) |
+| `FRONTEND_PROXY_API` | só no `npm run dev`: para onde repassar `/api` (padrão `http://127.0.0.1:8000`) |
 
 ## Integridade do ledger (âncoras)
 
@@ -244,10 +269,10 @@ Observações:
 
 ## Estrutura
 
-Três camadas, com dependência num só sentido: `web → api → monitor_normas`. O
+Três camadas, com dependência num só sentido: `frontend → api → monitor_normas`. O
 robô não sabe que a web existe, e a API não tem regra de negócio: ela valida a
-entrada, chama o robô e devolve JSON. O frontend usa só a API JSON, a mesma que
-outra aplicação usaria.
+entrada, chama o robô e devolve JSON. O frontend (React) usa só a API JSON, a mesma
+que outra aplicação usaria. Detalhes da arquitetura do React em [docs/PROJETO.md](docs/PROJETO.md#4-arquitetura).
 
 ```
 monitor_normas/         ROBÔ (usado pela CLI e pela API)
@@ -269,18 +294,22 @@ monitor_normas/         ROBÔ (usado pela CLI e pela API)
   agendamento.py        tarefa do Agendador do Windows / linha de cron
 api/                    CAMADA HTTP (FastAPI)
   main.py               criar_app(): rotas em /api/v1 e o frontend em /
+  frontend.py           entrega frontend/dist e devolve o index.html nas rotas do React
   autenticacao.py       senha opcional (HTTP Basic)
   esquemas.py           contrato de entrada e saída (Pydantic)
   executor.py           rodadas em segundo plano (thread + trava)
   contexto.py           dependências das rotas
   rotas/                alvos, execuções, consultas e saúde
-web/                    FRONTEND (HTML + JS puro, sem build)
-  index.html, estilo.css
-  js/api.js             único ponto de acesso à API
-  js/painel.js, alvos.js, mudancas.js, execucoes.js
+frontend/               TELAS (React + TypeScript + MUI, build com Vite)
+  src/api/              cliente da API, tipos e hooks do React Query
+  src/paginas/          painel/, alvos/, mudancas/, execucoes/
+  src/componentes/      layout, selos, paginação, diálogos...
 app.py                  "uvicorn app:app"
 monitor.py              CLI
+setup.sh                prepara a VM: .venv, Node do projeto, npm ci e build
 tests/                  pytest (offline): robô, CLI, banco e API (test_api.py)
-deploy/                 servidor Linux: systemd, Caddy, backup, logrotate e roteiro (README.md)
+deploy/                 servidor Linux: systemd, Caddy, backup, instalação e transferência de dados
+docs/PROJETO.md         documentação completa da versão React
+.github/workflows/      CI no Ubuntu (pytest, React e instalação completa)
 requirements-lock.txt   versões exatas para o servidor
 ```

@@ -1,6 +1,6 @@
 # Servidor Linux (VM): referência de operação
 
-Passo a passo resumido da instalação: [docs/PROJETO.md](../docs/PROJETO.md#instalação-na-vm-linux-passo-a-passo).
+Passo a passo resumido da instalação: [docs/PROJETO.md](../docs/PROJETO.md#8-instalação-na-vm-linux-passo-a-passo).
 Este arquivo detalha o que cada peça faz e como operar no dia a dia. Testado em Ubuntu 24.04
 (também serve para Debian 12), com systemd. No Windows nada disso é necessário.
 
