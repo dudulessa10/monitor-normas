@@ -1,8 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { api, ErroApi, mensagemDeErro, query } from './cliente.ts'
-
-afterEach(() => vi.unstubAllGlobals())
 
 const resposta = (status: number, corpo?: unknown) =>
   new Response(corpo === undefined ? null : JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } })
