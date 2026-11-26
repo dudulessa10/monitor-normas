@@ -1,0 +1,87 @@
+# Confere, num Ubuntu limpo, que o repositório funciona como na VM: só com o que está no Git.
+# Roda a cada push e pull request. Não usa segredos e não acessa os sites monitorados.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Python (pytest)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+
+  frontend:
+    name: React (lint, testes, build)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint     # inclui a conferência de maiúsculas/minúsculas dos imports
+      - run: npm test
+      - run: npm run build
+
+  instalacao:
+    name: Instalação como na VM (setup.sh + serviços)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: setup.sh (Python e Node isolados no projeto, npm ci e build)
+        run: ./setup.sh
+
+      - name: Nada fora do lugar depois do setup (git status limpo)
+        run: test -z "$(git status --porcelain)" || { git status; exit 1; }
+
+      - name: .env de teste
+        run: |
+          cp .env.example .env
+          sed -i 's/^MONITOR_NORMAS_SENHA=.*/MONITOR_NORMAS_SENHA=senha-de-teste-ci/' .env
+          chmod 600 .env
+
+      - name: Instala os serviços systemd
+        run: |
+          sudo apt-get install -y -qq acl
+          sudo deploy/instalar-servicos.sh
+
+      - name: Carga inicial dos alvos e conferência das telas e da API
+        run: |
+          sudo deploy/monitor.sh importar-yaml
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/)" = 401
+          curl -fsS -u admin:senha-de-teste-ci http://127.0.0.1:8000/ | grep -q 'Monitor de Normas'
+          curl -fsS -u admin:senha-de-teste-ci http://127.0.0.1:8000/alvos | grep -q 'id="root"'
+          curl -fsS -u admin:senha-de-teste-ci http://127.0.0.1:8000/api/v1/alvos | python3 -c 'import json,sys; assert len(json.load(sys.stdin)) > 0'
+          curl -fsS http://127.0.0.1:8000/api/v1/saude
+
+      - name: Importação de dados (como os trazidos do Windows)
+        run: |
+          base=$(mktemp -d)
+          sudo cp -r /var/lib/monitor-normas/dados "$base/"
+          sudo touch "$base/dados/ledger.jsonl"
+          sudo tar -czf /tmp/monitor-dados.tar.gz -C "$base" dados
+          sudo deploy/importar-dados.sh /tmp/monitor-dados.tar.gz
+          ls /var/lib/monitor-normas-backups/antes-da-importacao_*.tar.gz
+          systemctl is-active monitor-normas-web.service
+          curl -fsS -u admin:senha-de-teste-ci http://127.0.0.1:8000/api/v1/alvos | python3 -c 'import json,sys; assert len(json.load(sys.stdin)) > 0'
+
+      - name: Logs em caso de falha
+        if: failure()
+        run: sudo journalctl -u 'monitor-normas-*' -n 100 --no-pager
