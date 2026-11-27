@@ -1,5 +1,6 @@
 # Uma rodada de todos os alvos ativos. Disparada pelo monitor-normas-run.timer.
 # Não depende do servidor web; as duas execuções nunca se sobrepõem (trava em dados/monitor.lock).
+# Modelo: @PASTA@ é trocado pela pasta do projeto pelo deploy/instalar-servicos.sh.
 [Unit]
 Description=Monitor de Normas - execução agendada
 After=network-online.target
@@ -9,9 +10,9 @@ Wants=network-online.target
 Type=oneshot
 User=monitor-normas
 Group=monitor-normas
-WorkingDirectory=/opt/monitor-normas
-EnvironmentFile=/etc/monitor-normas/monitor-normas.env
-ExecStart=/opt/monitor-normas/.venv/bin/python monitor.py run --origem agendamento
+WorkingDirectory=@PASTA@
+EnvironmentFile=@PASTA@/.env
+ExecStart=@PASTA@/.venv/bin/python monitor.py run --origem agendamento
 # 3 = outra execução estava em andamento (não é falha). 1 = algum alvo falhou: fica como "failed".
 SuccessExitStatus=3
 TimeoutStartSec=1h
@@ -21,6 +22,6 @@ StateDirectoryMode=0750
 UMask=0027
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=true
+ProtectHome=read-only
 PrivateTmp=true
 ReadWritePaths=/var/lib/monitor-normas

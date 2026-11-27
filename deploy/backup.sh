@@ -9,7 +9,7 @@ set -euo pipefail
 BASE="${MONITOR_NORMAS_BASE:-/var/lib/monitor-normas}"
 DESTINO="${MONITOR_NORMAS_BACKUP:-/var/lib/monitor-normas-backups}"
 MANTER_DIAS="${MONITOR_NORMAS_BACKUP_DIAS:-30}"
-PYTHON="${PYTHON:-/opt/monitor-normas/.venv/bin/python}"
+PYTHON="${PYTHON:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.venv/bin/python}"
 
 umask 077
 temporaria=$(mktemp -d)

@@ -1,8 +1,32 @@
+# ---- Python
 .venv/
 __pycache__/
 .pytest_cache/
+
+# ---- Dados gerados pelo robô (ficam na máquina; vão para a VM pelo deploy/exportar-dados.ps1, não pelo Git)
 dados/
 relatorios/
 logs/
 *.xlsx
+
+# ---- Frontend (gerados por npm ci / npm run build)
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# ---- Node baixado pelo setup.sh para dentro do projeto
+.ferramentas/
+
+# ---- Variáveis reais (o modelo versionado é o .env.example)
 .env
+.env.*
+!.env.example
+
+# ---- Sistema e editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.log

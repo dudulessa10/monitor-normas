@@ -1,4 +1,5 @@
 # Aplicativo web (telas + API). Escuta só em 127.0.0.1; o Caddy publica com HTTPS.
+# Modelo: @PASTA@ é trocado pela pasta do projeto pelo deploy/instalar-servicos.sh.
 [Unit]
 Description=Monitor de Normas - aplicativo web
 After=network-online.target
@@ -8,10 +9,11 @@ Wants=network-online.target
 Type=simple
 User=monitor-normas
 Group=monitor-normas
-WorkingDirectory=/opt/monitor-normas
-EnvironmentFile=/etc/monitor-normas/monitor-normas.env
+WorkingDirectory=@PASTA@
+# Variáveis só deste serviço (o .env não é carregado em nenhum outro lugar).
+EnvironmentFile=@PASTA@/.env
 # Um worker só: as execuções disparadas pela web rodam numa thread deste processo.
-ExecStart=/opt/monitor-normas/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --no-server-header
+ExecStart=@PASTA@/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --no-server-header
 Restart=on-failure
 RestartSec=5
 
@@ -20,7 +22,8 @@ StateDirectoryMode=0750
 UMask=0027
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=true
+# O código fica no home: o serviço pode ler, mas não alterar nada lá.
+ProtectHome=read-only
 PrivateTmp=true
 ReadWritePaths=/var/lib/monitor-normas
 
