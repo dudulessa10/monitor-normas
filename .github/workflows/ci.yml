@@ -78,7 +78,7 @@ jobs:
           sudo touch "$base/dados/ledger.jsonl"
           sudo tar -czf /tmp/monitor-dados.tar.gz -C "$base" dados
           sudo deploy/importar-dados.sh /tmp/monitor-dados.tar.gz
-          ls /var/lib/monitor-normas-backups/antes-da-importacao_*.tar.gz
+          sudo sh -c 'ls -l /var/lib/monitor-normas-backups/antes-da-importacao_*.tar.gz'   # pasta só do root, de propósito
           systemctl is-active monitor-normas-web.service
           curl -fsS -u admin:senha-de-teste-ci http://127.0.0.1:8000/api/v1/alvos | python3 -c 'import json,sys; assert len(json.load(sys.stdin)) > 0'
 
