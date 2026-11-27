@@ -69,7 +69,13 @@ else
 fi
 
 systemctl start monitor-normas-web.service monitor-normas-run.timer monitor-normas-backup.timer
-ok "serviços religados"
+for _ in $(seq 1 30); do
+    curl -fsS -o /dev/null http://127.0.0.1:8000/api/v1/saude 2>/dev/null && break
+    sleep 0.5
+done
+curl -fsS -o /dev/null http://127.0.0.1:8000/api/v1/saude \
+    || falha "o servidor não voltou a responder; veja: journalctl -u monitor-normas-web -n 50"
+ok "serviços religados e servidor respondendo"
 echo
 echo "Agora desative a execução automática no Windows (senão os dois ledgers divergem):"
 echo "    python monitor.py agendar --remover"
