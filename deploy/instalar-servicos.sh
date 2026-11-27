@@ -4,9 +4,10 @@
 #
 # O que este script altera na máquina (e nada além disso):
 #   - cria o usuário de sistema monitor-normas, se ainda não existir;
-#   - dá ao monitor-normas permissão só de ATRAVESSAR (x, por ACL) as pastas acima do projeto
-#     (ex.: /home/voce), para o serviço conseguir ler o código; ele não consegue listar nem ler
-#     os outros arquivos do seu home;
+#   - dá ao monitor-normas, por ACL, permissão só de ATRAVESSAR (x) as pastas acima do projeto
+#     (ex.: /home/voce): ele não consegue listar nem ler os outros arquivos do seu home;
+#   - dá ao monitor-normas, por ACL, permissão de LEITURA na pasta do projeto (inclusive para
+#     arquivos que chegarem em futuros git pull), menos no .env, que é lido pelo systemd como root;
 #   - grava /etc/systemd/system/monitor-normas-*.service|timer e /etc/logrotate.d/monitor-normas;
 #   - cria /var/lib/monitor-normas (dados) se não existir; dados já existentes são mantidos.
 # Não altera variáveis de ambiente, ~/.bashrc, /etc/environment nem outras aplicações.
@@ -38,20 +39,35 @@ else
 fi
 
 # ---------------------------------------------------------------- acesso de leitura ao código
-dir="$PASTA"
+command -v setfacl >/dev/null || falha "setfacl não encontrado. Instale: sudo apt install acl"
+
+# Pastas acima do projeto: só atravessar.
+dir="$(dirname "$PASTA")"
 while [ "$dir" != "/" ]; do
     if ! runuser -u "$USUARIO" -- test -x "$dir"; then
-        command -v setfacl >/dev/null || falha "setfacl não encontrado. Instale: sudo apt install acl"
         setfacl -m "u:$USUARIO:x" "$dir"
         ok "permissão de atravessar (só x) para $USUARIO em $dir"
     fi
     dir="$(dirname "$dir")"
 done
-for arquivo in app.py alvos.yaml .venv/bin/python frontend/dist/index.html deploy/backup.sh; do
-    runuser -u "$USUARIO" -- test -r "$PASTA/$arquivo" \
-        || falha "$USUARIO não consegue ler $PASTA/$arquivo (confira as permissões: chmod -R o+rX $PASTA)"
+
+# Pasta do projeto: leitura (r nos arquivos, rx nas pastas). O Python precisa listar as pastas para
+# importar o código. A ACL "padrão" (-d) faz os arquivos novos do git pull herdarem a leitura.
+setfacl -R -m "u:$USUARIO:rX" "$PASTA"
+find "$PASTA" -type d -exec setfacl -d -m "u:$USUARIO:rX" {} +
+setfacl -x "u:$USUARIO" "$PASTA/.env"
+ok "permissão de leitura para $USUARIO em $PASTA (menos no .env)"
+
+# Conferência real: o serviço consegue importar o código e ler o build e os scripts?
+runuser -u "$USUARIO" -- env -C "$PASTA" PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -c "import api.main, monitor_normas, uvicorn" \
+    || falha "$USUARIO não consegue importar o código em $PASTA (veja o erro acima)"
+for arquivo in app.py alvos.yaml frontend/dist/index.html deploy/backup.sh; do
+    runuser -u "$USUARIO" -- test -r "$PASTA/$arquivo" || falha "$USUARIO não consegue ler $PASTA/$arquivo"
 done
-ok "$USUARIO consegue ler o código"
+if runuser -u "$USUARIO" -- test -r "$PASTA/.env"; then
+    echo "aviso: o .env pode ser lido por outros usuários; recomendado: chmod 600 $PASTA/.env"
+fi
+ok "$USUARIO consegue ler e importar o código"
 
 # ---------------------------------------------------------------- serviços
 install -d -o "$USUARIO" -g "$USUARIO" -m 750 /var/lib/monitor-normas

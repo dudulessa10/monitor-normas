@@ -299,7 +299,7 @@ Use sempre `npm ci` (e não `npm install`) para instalar: ele usa exatamente as 
 | `setup.sh`: "não foi possível criar o .venv" | falta o pacote do venv | `sudo apt install python3-venv` |
 | `setup.sh`: erro ao baixar o Node | VM sem acesso a nodejs.org | libere o acesso ou instale o Node 26 manualmente; o script usa o da máquina se for a versão 26 |
 | `instalar-servicos.sh`: "setfacl não encontrado" | falta o pacote `acl` | `sudo apt install acl` |
-| `instalar-servicos.sh`: "não consegue ler ..." | permissões restritas na pasta do projeto | `chmod -R o+rX ~/monitor-legislacao-anac` (o `.env` continua 600) |
+| `instalar-servicos.sh`: "não consegue importar/ler ..." | permissões alteradas na pasta do projeto | rode de novo `sudo deploy/instalar-servicos.sh` (ele refaz as permissões de leitura por ACL) |
 | Serviço web não sobe | ver o log | `journalctl -u monitor-normas-web -n 50` |
 | `Permission denied` ao rodar `deploy/*.sh` | arquivo copiado sem permissão de execução | use o `git clone` (o Git guarda a permissão) ou `chmod +x setup.sh deploy/*.sh` |
 | Build quebra só no Linux com "não encontrado" | import com maiúscula/minúscula diferente do arquivo | `npm run lint` aponta o import exato |

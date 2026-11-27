@@ -17,8 +17,9 @@ Este arquivo detalha o que cada peça faz e como operar no dia a dia. Testado em
 
 Os serviços rodam com o usuário de sistema `monitor-normas`, que **lê** o código no seu home
 (`ProtectHome=read-only`: não consegue alterar nada lá) e só escreve em `/var/lib/monitor-normas*`.
-Para conseguir ler, ele recebe permissão apenas de *atravessar* (`x`, por ACL) as pastas acima do
-projeto. Ele não lista nem lê os outros arquivos do seu home.
+Para isso, o `instalar-servicos.sh` dá a ele, por ACL, permissão de **leitura** na pasta do projeto
+(menos no `.env`, que é lido pelo systemd como root) e apenas de **atravessar** (`x`) as pastas acima
+dela: ele não lista nem lê os outros arquivos do seu home.
 
 **Isolamento:** nada do projeto altera `~/.bashrc`, `~/.profile`, `/etc/environment`, o Python ou o
 Node do sistema, nem variáveis ou arquivos de outras aplicações do home.
